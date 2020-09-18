@@ -1,4 +1,5 @@
 #!/bin/bash
+
 source settings.sh
 
 hms_to_hours() {
