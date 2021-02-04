@@ -92,8 +92,11 @@ then
             time_without_seconds=${time_with_seconds::-3}
             hours="$(hms_to_hours $time_with_seconds)"
             hours=${hours/,/.}
-            echo "Worked $hours h up until now."
-            update_datapoint $e $hours
+            break_time_hours=$(awk 'BEGIN {print'"$(zsh -ic 'btime') / -60"'}')
+            break_time_hours=${break_time_hours/,/.}
+            hours_without_break_time=$( awk 'BEGIN {print '"$hours - $break_time_hours"'}' )
+            echo "Worked $hours_without_break_time h up until now."
+            update_datapoint $e $hours_without_break_time
             printf '\n\n'
         done
         sleep $SLEEP_TIME_SECONDS
