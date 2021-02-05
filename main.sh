@@ -95,7 +95,7 @@ then
             break_time_hours_deficite=$(awk 'BEGIN {print'" $(zsh -ic 'btime') / -60"'}')
             break_time_hours_deficite=${break_time_hours_deficite/,/.}
             echo "break_time_hours_deficite: " "$break_time_hours_deficite"
-            if [[ $break_time_hours_deficite > 0 ]]
+            if (( $(echo "$break_time_hours_deficite > 0" |bc -l) ))
             then
                 hours_without_break_time=$( awk 'BEGIN {print '"$hours - $break_time_hours_deficite"'}' )
             else
@@ -104,7 +104,10 @@ then
             hours_without_break_time=${hours_without_break_time/,/.}
             echo "hours_without_break_time: " "$hours_without_break_time"
             echo "Worked $hours_without_break_time h up until now."
-            update_datapoint $e $hours_without_break_time
+            if ((  $(echo "$hours_without_break_time > 0" |bc -l) ))
+            then
+                update_datapoint $e $hours_without_break_time
+            fi
             printf '\n\n'
         done
         sleep $SLEEP_TIME_SECONDS
