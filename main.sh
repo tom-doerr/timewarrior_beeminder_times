@@ -23,9 +23,16 @@ create_empty_datapoint() {
 
 update_datapoint() {
     id_last_datapoint=$(get_value_from_last_datapoint $1 id)
-    curl -X PUT https://www.beeminder.com/api/v1/users/$USERNAME/goals/$1/datapoints/"$id_last_datapoint".json \
-    -d auth_token=$AUTHENTICATION_TOKEN \
-    -d value=$2
+    value_last_datapoint=$(get_value_from_last_datapoint $1 value)
+    if (( $(echo "$2 > $value_last_datapoint" | bc -l) ))
+    then
+        curl -X PUT https://www.beeminder.com/api/v1/users/$USERNAME/goals/$1/datapoints/"$id_last_datapoint".json \
+        -d auth_token=$AUTHENTICATION_TOKEN \
+        -d value=$2
+    else
+        echo "Not updating data for $1, since new value $2 is lower than the old current value $value_last_datapoint. \
+            Updating might trigger an accidental recommit."
+    fi
 }
 
 get_information_goal() {
