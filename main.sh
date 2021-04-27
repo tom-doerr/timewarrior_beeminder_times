@@ -2,6 +2,14 @@
 
 source settings.sh
 
+PATH_CONCENTRATION_VALUES='/home/tom/git/concentration_tracking/concentration_inference.csv'
+
+get_concentration_sum_5am() {
+    timestamp_5am=$(date +%s --date "$(date --date '5 hours ago' '+%Y-%m-%d')T05:00:00")
+    export LC_NUMERIC='C' 
+    cat $PATH_CONCENTRATION_VALUES  | awk '$1 > '"$timestamp_5am" | awk '{sum += $2} END {print sum}'
+}
+
 hms_to_hours() {
     echo "$1" | awk -F: '{ print (($1 * 3600) + ($2 * 60) + $3) / 3600 }'
 }
@@ -82,40 +90,50 @@ get_day_of_the_week() {
     date +%u
 }
 
+
+
+
+
 if [[ "$1" != 'only_source' ]]
 then
     while true
     do
         for e in $TAGS
         do 
-            if check_if_new_datapoint_needs_to_be_created $e
+            if [[ ! $e =~ 'concentration' ]]
             then
-                echo "Creating Datapoint"
-                daystamp=$(get_daystamp_today)
-                create_empty_datapoint $e $daystamp
-            fi
-            echo $e
-            time_with_seconds=$(eval 'echo "   "; timew su $(date --date "301 minutes ago" +%Y-%m-%d)T05:00:00 - tomorrow '$e' | tail -2 | head -1 | { read first rest; echo $first; }')
-            time_without_seconds=${time_with_seconds::-3}
-            hours="$(hms_to_hours $time_with_seconds)"
-            hours=${hours/,/.}
-            break_time_hours_deficite=$(awk 'BEGIN {print'" $(zsh -ic 'btime') / -60"'}')
-            break_time_hours_deficite=${break_time_hours_deficite/,/.}
-            echo "break_time_hours_deficite: " "$break_time_hours_deficite"
-            if (( $(echo "$break_time_hours_deficite > 0" |bc -l) ))
-            then
-                hours_without_break_time=$( awk 'BEGIN {print '"$hours - $break_time_hours_deficite"'}' )
+                if check_if_new_datapoint_needs_to_be_created $e
+                then
+                    echo "Creating Datapoint"
+                    daystamp=$(get_daystamp_today)
+                    create_empty_datapoint $e $daystamp
+                fi
+                echo $e
+                time_with_seconds=$(eval 'echo "   "; timew su $(date --date "301 minutes ago" +%Y-%m-%d)T05:00:00 - tomorrow '$e' | tail -2 | head -1 | { read first rest; echo $first; }')
+                time_without_seconds=${time_with_seconds::-3}
+                hours="$(hms_to_hours $time_with_seconds)"
+                hours=${hours/,/.}
+                break_time_hours_deficite=$(awk 'BEGIN {print'" $(zsh -ic 'btime') / -60"'}')
+                break_time_hours_deficite=${break_time_hours_deficite/,/.}
+                echo "break_time_hours_deficite: " "$break_time_hours_deficite"
+                if (( $(echo "$break_time_hours_deficite > 0" |bc -l) ))
+                then
+                    hours_without_break_time=$( awk 'BEGIN {print '"$hours - $break_time_hours_deficite"'}' )
+                else
+                    hours_without_break_time=$hours
+                fi
+                hours_without_break_time=${hours_without_break_time/,/.}
+                echo "hours_without_break_time: " "$hours_without_break_time"
+                echo "Worked $hours_without_break_time h up until now."
+                if ((  $(echo "$hours_without_break_time > 0" |bc -l) ))
+                then
+                    update_datapoint $e $hours_without_break_time
+                fi
+                printf '\n\n'
             else
-                hours_without_break_time=$hours
+                echo "get_concentration_sum_5am: " "$(get_concentration_sum_5am)"
+                update_datapoint $e $(get_concentration_sum_5am)
             fi
-            hours_without_break_time=${hours_without_break_time/,/.}
-            echo "hours_without_break_time: " "$hours_without_break_time"
-            echo "Worked $hours_without_break_time h up until now."
-            if ((  $(echo "$hours_without_break_time > 0" |bc -l) ))
-            then
-                update_datapoint $e $hours_without_break_time
-            fi
-            printf '\n\n'
         done
         sleep $SLEEP_TIME_SECONDS
     done
