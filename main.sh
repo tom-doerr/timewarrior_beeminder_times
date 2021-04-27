@@ -38,7 +38,7 @@ update_datapoint() {
         -d auth_token=$AUTHENTICATION_TOKEN \
         -d value=$2
     else
-        echo "Not updating data for $1, since new value $2 is lower than the old current value $value_last_datapoint. \
+        echo "Not updating data for $1, since new value $2 is not higher than the old current value $value_last_datapoint. \
             Updating might trigger an accidental recommit."
     fi
 }
