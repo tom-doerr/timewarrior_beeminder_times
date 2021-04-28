@@ -100,15 +100,15 @@ then
     do
         for e in $TAGS
         do 
+            if check_if_new_datapoint_needs_to_be_created $e
+            then
+                echo "Creating Datapoint"
+                daystamp=$(get_daystamp_today)
+                create_empty_datapoint $e $daystamp
+            fi
+            echo $e
             if [[ ! $e =~ 'concentration' ]]
             then
-                if check_if_new_datapoint_needs_to_be_created $e
-                then
-                    echo "Creating Datapoint"
-                    daystamp=$(get_daystamp_today)
-                    create_empty_datapoint $e $daystamp
-                fi
-                echo $e
                 time_with_seconds=$(eval 'echo "   "; timew su $(date --date "301 minutes ago" +%Y-%m-%d)T05:00:00 - tomorrow '$e' | tail -2 | head -1 | { read first rest; echo $first; }')
                 time_without_seconds=${time_with_seconds::-3}
                 hours="$(hms_to_hours $time_with_seconds)"
